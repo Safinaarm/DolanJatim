@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0d9488">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>DolanJatim - Liburan Asik & Smart Budget Jawa Timur</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@600;800;900&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Leaflet CSS for OpenStreetMap -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  
+  <!-- Canvas Confetti for Celebration -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Floating Island Top Navigation -->
+  <header class="app-header">
+    <div class="container nav-wrapper">
+      <a href="#" class="brand-logo">
+        <div class="logo-emoji-box">
+          <i class="fa-solid fa-route logo-vector-icon"></i>
+        </div>
+        <div class="brand-text">
+          <h1>DolanJatim<span class="sparkle-badge">2.0</span></h1>
+          <p>Liburan Cerdas Se-Jawa Timur</p>
+        </div>
+      </a>
+      
+      <div class="nav-badges-group">
+        <span class="vibe-pill"><i class="fa-solid fa-map-location-dot"></i> OpenStreetMap Live</span>
+        <button type="button" class="sound-toggle-btn" id="soundToggleBtn" title="Efek Suara Audio" aria-label="Toggle Sound">
+          <i class="fa-solid fa-volume-high"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero & Joyful Interactive Planner -->
+  <main class="main-content">
+    <div class="container">
+      
+      <!-- Cheerful Banner with Ambient Gradient Glow Animations -->
+      <div class="hero-joy-banner">
+        <div class="ambient-glow-mesh" aria-hidden="true">
+          <div class="ambient-orb orb-1"></div>
+          <div class="ambient-orb orb-2"></div>
+          <div class="ambient-orb orb-3"></div>
+        </div>
+        
+        <div class="hero-tagline">
+          <span class="pill-chip-glow"><i class="fa-solid fa-wand-magic-sparkles"></i> Perencana Liburan Interaktif</span>
+          <h2>Mau Dolan Kemana Hari Ini? <span class="gradient-text">Yuk Rencanain!</span></h2>
+          <p>Hitung rute OpenStreetMap otomatis, kalkulasi bensin & tol, plus paket rekomendasi wisata, hotel, kuliner & cafe yang pas di kantong.</p>
+        </div>
+
+        <!-- Travel Vibe Filter Quick Bar -->
+        <div class="vibe-selector-container">
+          <span class="vibe-title"><i class="fa-solid fa-sliders"></i> Pilih Gaya Liburan:</span>
+          <div class="vibe-chips">
+            <button type="button" class="vibe-btn active" data-vibe="all">
+              <i class="fa-solid fa-layer-group"></i> Semua Gaya
+            </button>
+            <button type="button" class="vibe-btn" data-vibe="backpacker">
+              <i class="fa-solid fa-person-hiking"></i> Hemat Backpacker
+            </button>
+            <button type="button" class="vibe-btn" data-vibe="roadtrip">
+              <i class="fa-solid fa-car-side"></i> Road Trip Keluarga
+            </button>
+            <button type="button" class="vibe-btn" data-vibe="sultan">
+              <i class="fa-solid fa-crown"></i> Liburan Sultan
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Interactive Planner Form -->
+      <section class="planner-card-modern">
+        <form id="plannerForm">
+          <div class="form-grid-layout">
+            
+            <!-- Lokasi Asal Dropdown -->
+            <div class="field-card">
+              <label for="originCity" class="field-label">
+                <span class="field-icon-box origin"><i class="fa-solid fa-compass"></i></span>
+                <div>
+                  <span class="label-title">Kota Asal</span>
+                  <span class="label-desc">Titik berangkat Anda</span>
+                </div>
+              </label>
+              <div class="select-wrapper">
+                <select id="originCity" class="custom-select" required>
+                  <!-- Populated dynamically -->
+                </select>
+                <i class="fa-solid fa-chevron-down select-arrow"></i>
+              </div>
+            </div>
+
+            <!-- Kota Tujuan Dropdown -->
+            <div class="field-card">
+              <label for="destCity" class="field-label">
+                <span class="field-icon-box dest"><i class="fa-solid fa-location-dot"></i></span>
+                <div>
+                  <span class="label-title">Kota Tujuan</span>
+                  <span class="label-desc">Destinasi wisata di Jatim</span>
+                </div>
+              </label>
+              <div class="select-wrapper">
+                <select id="destCity" class="custom-select" required>
+                  <!-- Populated dynamically -->
+                </select>
+                <i class="fa-solid fa-chevron-down select-arrow"></i>
+              </div>
+            </div>
+
+            <!-- Input Jumlah Orang / Peserta Liburan -->
+            <div class="field-card people-field-card">
+              <label class="field-label">
+                <span class="field-icon-box people"><i class="fa-solid fa-users"></i></span>
+                <div>
+                  <span class="label-title">Jumlah Peserta</span>
+                  <span class="label-desc">Kalkulasi tiket, kamar & kendaraan</span>
+                </div>
+              </label>
+              
+              <div class="stepper-box">
+                <button type="button" class="stepper-btn" id="btnMinusPeople" aria-label="Kurangi Peserta">−</button>
+                <div class="stepper-display">
+                  <span id="peopleDisplayNum">2</span>
+                  <span class="stepper-unit">Orang</span>
+                </div>
+                <button type="button" class="stepper-btn" id="btnPlusPeople" aria-label="Tambah Peserta">+</button>
+                <input type="hidden" id="peopleCount" value="2">
+              </div>
+
+              <!-- Quick Presets for People -->
+              <div class="people-preset-chips">
+                <button type="button" class="preset-chip-pax" data-pax="1"><i class="fa-solid fa-user"></i> Solo (1)</button>
+                <button type="button" class="preset-chip-pax active" data-pax="2"><i class="fa-solid fa-user-group"></i> Berdua (2)</button>
+                <button type="button" class="preset-chip-pax" data-pax="4"><i class="fa-solid fa-people-roof"></i> Keluarga (4)</button>
+                <button type="button" class="preset-chip-pax" data-pax="6"><i class="fa-solid fa-van-shuttle"></i> Rombongan (6)</button>
+              </div>
+            </div>
+
+            <!-- Input Budget & Interactive Slider -->
+            <div class="field-card budget-field-card">
+              <label for="budgetInput" class="field-label">
+                <span class="field-icon-box budget"><i class="fa-solid fa-wallet"></i></span>
+                <div>
+                  <span class="label-title">Budget Total Rombongan</span>
+                  <span class="label-desc">Geser slider atau ketik nominal</span>
+                </div>
+              </label>
+              
+              <div class="budget-input-box">
+                <span class="currency-tag">Rp</span>
+                <input type="text" id="budgetInput" class="custom-input-budget" placeholder="1.000.000" value="1.000.000" inputmode="numeric" required>
+              </div>
+
+              <!-- Interactive Budget Slider -->
+              <div class="slider-wrapper">
+                <input type="range" id="budgetRange" min="200000" max="6000000" step="50000" value="1000000" class="budget-range-slider" aria-label="Budget Slider">
+                <div class="range-labels">
+                  <span>Rp 200rb</span>
+                  <span>Rp 3 Juta</span>
+                  <span>Rp 6 Juta+</span>
+                </div>
+              </div>
+
+              <!-- Quick Budget Preset Pills -->
+              <div class="preset-pill-group">
+                <button type="button" class="quick-chip" data-budget="500000">Rp 500rb</button>
+                <button type="button" class="quick-chip active" data-budget="1000000">Rp 1 Juta</button>
+                <button type="button" class="quick-chip" data-budget="2000000">Rp 2 Juta</button>
+                <button type="button" class="quick-chip" data-budget="3500000">Rp 3.5 Juta</button>
+              </div>
+            </div>
+
+            <!-- Transport Selection Card -->
+            <div class="field-card">
+              <label class="field-label">
+                <span class="field-icon-box transport"><i class="fa-solid fa-car-side"></i></span>
+                <div>
+                  <span class="label-title">Moda Transportasi</span>
+                  <span class="label-desc">Kalkulasi bensin & tarif tol</span>
+                </div>
+              </label>
+
+              <div class="transport-segmented-cards">
+                <label class="transport-option" for="transMotor">
+                  <input type="radio" id="transMotor" name="transport" value="motor" checked>
+                  <div class="transport-pill-body">
+                    <span class="trans-icon-circle"><i class="fa-solid fa-motorcycle"></i></span>
+                    <div class="trans-detail">
+                      <strong>Motor</strong>
+                      <span>Tanpa Tol • Irit Bensin</span>
+                    </div>
+                  </div>
+                </label>
+
+                <label class="transport-option" for="transMobil">
+                  <input type="radio" id="transMobil" name="transport" value="mobil">
+                  <div class="transport-pill-body">
+                    <span class="trans-icon-circle"><i class="fa-solid fa-car"></i></span>
+                    <div class="trans-detail">
+                      <strong>Mobil</strong>
+                      <span>Tarif Tol + Bensin</span>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Hotel Switch Card -->
+            <div class="field-card">
+              <label class="field-label">
+                <span class="field-icon-box hotel"><i class="fa-solid fa-hotel"></i></span>
+                <div>
+                  <span class="label-title">Butuh Penginapan?</span>
+                  <span class="label-desc">Centang jika ingin menginap</span>
+                </div>
+              </label>
+
+              <label class="toggle-switch-card" for="hotelCheck">
+                <div class="switch-info">
+                  <strong id="hotelToggleLabel">Ya, Butuh Hotel (1 Malam)</strong>
+                  <span id="hotelToggleSub">Biaya hotel masuk estimasi</span>
+                </div>
+                <div class="modern-switch">
+                  <input type="checkbox" id="hotelCheck" checked>
+                  <span class="switch-slider"></span>
+                </div>
+              </label>
+            </div>
+
+          </div>
+
+          <!-- Submit Action Button -->
+          <button type="submit" class="btn-calculate-glow" id="submitBtn">
+            <span class="btn-icon-spin"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
+            <span class="btn-main-text">Hitung dan Cari Rekomendasi</span>
+            <i class="fa-solid fa-arrow-right btn-arrow"></i>
+          </button>
+
+          <!-- Popular Destination Shortcuts -->
+          <div class="popular-destinations-bar">
+            <span class="dest-bar-label"><i class="fa-solid fa-fire-flame-curved"></i> Coba Destinasi Hits:</span>
+            <div class="dest-chips-scroll">
+              <button type="button" class="dest-shortcut-btn" data-dest="Batu"><i class="fa-solid fa-mountain-city"></i> Kota Batu</button>
+              <button type="button" class="dest-shortcut-btn" data-dest="Malang"><i class="fa-solid fa-mug-hot"></i> Malang Sejuk</button>
+              <button type="button" class="dest-shortcut-btn" data-dest="Banyuwangi"><i class="fa-solid fa-volcano"></i> Banyuwangi Ijen</button>
+              <button type="button" class="dest-shortcut-btn" data-dest="Mojokerto"><i class="fa-solid fa-campground"></i> Trawas & Pacet</button>
+              <button type="button" class="dest-shortcut-btn" data-dest="Probolinggo"><i class="fa-solid fa-sun"></i> Bromo Sunrise</button>
+              <button type="button" class="dest-shortcut-btn" data-dest="Pacitan"><i class="fa-solid fa-water"></i> Pantai Pacitan</button>
+            </div>
+          </div>
+        </form>
+      </section>
+
+      <!-- Joyful Animated Loading Screen (Vector Route Animation) -->
+      <div class="loading-container-joy" id="loadingBox">
+        <div class="loading-route-animator">
+          <div class="pulse-radar-dot origin" title="Titik Berangkat"></div>
+          <div class="animated-route-track">
+            <div class="track-dashed-pulse"></div>
+            <div class="running-car-icon" id="loadingVehicleIcon">
+              <i class="fa-solid fa-car-side"></i>
+            </div>
+          </div>
+          <div class="pulse-radar-dot dest" title="Destinasi Wisata"></div>
+        </div>
+        <h4>Sedang Menyusun Petualangan Anda...</h4>
+        <p>Menghitung jarak OpenStreetMap, konsumsi bahan bakar, tarif tol, kapasitas kamar & kendaraan se-Jawa Timur.</p>
+      </div>
+
+      <!-- Results Main Container -->
+      <section class="results-joy-section" id="resultsSection">
+        
+        <!-- Results Header Banner -->
+        <div class="results-header-banner">
+          <div>
+            <span class="tag-status-pill"><i class="fa-solid fa-circle-check"></i> Rencana Siap Dijelajahi!</span>
+            <h3 id="tripSummaryTitle">Pilihan Paket Liburan ke Kota Batu</h3>
+            <p id="tripSummarySubtitle">Dari Surabaya • Dihitung dengan rute OpenStreetMap & disesuaikan budget rombongan Anda.</p>
+          </div>
+          <div class="header-action-buttons">
+            <button type="button" class="btn-joy-outline" onclick="window.print()">
+              <i class="fa-solid fa-print"></i> Cetak / PDF
+            </button>
+          </div>
+        </div>
+
+        <!-- Interactive Map & Trip Specs Card -->
+        <div class="route-map-interactive-card">
+          <div class="map-stats-strip">
+            <div class="strip-stat">
+              <div class="stat-icon-joy cyan"><i class="fa-solid fa-route"></i></div>
+              <div>
+                <span>Rute Perjalanan</span>
+                <strong id="statRouteText">Surabaya ➔ Batu</strong>
+              </div>
+            </div>
+            <div class="strip-stat">
+              <div class="stat-icon-joy amber"><i class="fa-solid fa-gauge-high"></i></div>
+              <div>
+                <span>Jarak Tempuh (PP)</span>
+                <strong id="statDistanceText">102 km (PP 204 km)</strong>
+              </div>
+            </div>
+            <div class="strip-stat">
+              <div class="stat-icon-joy purple"><i class="fa-solid fa-clock"></i></div>
+              <div>
+                <span>Waktu Tempuh</span>
+                <strong id="statDurationText">~1 jam 45 menit</strong>
+              </div>
+            </div>
+            <div class="strip-stat">
+              <div class="stat-icon-joy emerald"><i class="fa-solid fa-gas-pump"></i></div>
+              <div>
+                <span>Biaya Transportasi PP</span>
+                <strong id="statTransportCost">Rp 51.000</strong>
+              </div>
+            </div>
+          </div>
+          
+          <div class="map-view-wrapper">
+            <div id="map"></div>
+            <div class="map-overlay-badge">
+              <i class="fa-solid fa-satellite-dish"></i> OpenStreetMap Live Routing
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 1: Multiple Package Containers (Tailored to Budget & People Count) -->
+        <div class="packages-section-title">
+          <div class="title-left">
+            <h4><i class="fa-solid fa-sparkles" style="color: #f59e0b;"></i> Rekomendasi Paket Liburan Pilihan</h4>
+            <p>Tiap container memuat wisata, hotel, kuliner & cafe opsional, beserta catatan anggarannya. <strong>Bisa ganti tempat secara interaktif!</strong></p>
+          </div>
+        </div>
+
+        <!-- Packages Render Target -->
+        <div class="packages-grid-modern" id="packagesList">
+          <!-- Populated by app.js -->
+        </div>
+
+        <!-- Section 2: Explore All City Database -->
+        <div class="explore-database-card">
+          <div class="explore-header-box">
+            <div>
+              <h4><i class="fa-solid fa-compass-drafting" style="color: #0284c7;"></i> Eksplorasi Seluruh Tempat di <span id="exploreCityName">Kota Batu</span></h4>
+              <p>Jelajahi dan pilih dari seluruh 382 wisata, 609 penginapan, 503 resto, dan 769 cafe di Jawa Timur.</p>
+            </div>
+          </div>
+
+          <!-- Tabs -->
+          <div class="modern-tabs-bar">
+            <button class="m-tab-btn active" data-tab="wisataTab">
+              <i class="fa-solid fa-map-pin"></i> Semua Wisata <span class="tab-badge-num" id="countWisata">0</span>
+            </button>
+            <button class="m-tab-btn" data-tab="hotelTab">
+              <i class="fa-solid fa-hotel"></i> Semua Hotel <span class="tab-badge-num" id="countHotel">0</span>
+            </button>
+            <button class="m-tab-btn" data-tab="restoTab">
+              <i class="fa-solid fa-utensils"></i> Resto Lokal (Opsional) <span class="tab-badge-num" id="countResto">0</span>
+            </button>
+            <button class="m-tab-btn" data-tab="cafeTab">
+              <i class="fa-solid fa-mug-saucer"></i> Cafe Hits (Opsional) <span class="tab-badge-num" id="countCafe">0</span>
+            </button>
+          </div>
+
+          <!-- Search & Filter Controls -->
+          <div class="explore-search-controls">
+            <div class="search-input-group">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="searchInput" placeholder="Cari nama tempat, kategori, atau alamat...">
+            </div>
+            <div class="optional-hint-tag" id="tabOptionalNotice" style="display: none;">
+              <i class="fa-solid fa-circle-info"></i> Kuliner & Cafe: Opsional (Tidak dihitung ke biaya wajib)
+            </div>
+          </div>
+
+          <!-- Cards Grid -->
+          <div class="cards-grid-explore" id="cardsGrid">
+            <!-- Rendered by app.js -->
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Interactive Modal / Bottom Sheet: "Ganti Tempat / Pilih Alternatif" -->
+  <div class="modal-backdrop" id="itemPickerModal" aria-hidden="true">
+    <div class="modal-dialog-bottom-sheet">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <div class="modal-icon-badge" id="modalIconBadge">
+            <i class="fa-solid fa-arrows-rotate"></i>
+          </div>
+          <div>
+            <h5 id="modalTitle">Pilih Tempat Wisata Alternatif</h5>
+            <p id="modalSubtitle">Klik salah satu tempat untuk langsung mengganti di paket Anda</p>
+          </div>
+        </div>
+        <button type="button" class="btn-close-modal" id="btnCloseModal" aria-label="Tutup Modal">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal-search-bar">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="modalSearchInput" placeholder="Ketik nama tempat untuk mencari...">
+      </div>
+
+      <div class="modal-items-list" id="modalItemsList">
+        <!-- Dynamic list of places for quick selection -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Floating Quick-Action Bar (appears after calculation) -->
+  <aside class="mobile-floating-bar" id="mobileFloatingBar">
+    <div class="mobile-bar-content">
+      <div class="mobile-bar-info">
+        <span class="pkg-tag-small" id="mobBarPkgTitle">Paket 1 Terpilih</span>
+        <strong id="mobBarPrice">Rp 450.000</strong>
+        <span class="mob-bar-balance" id="mobBarBalance">Sisa: +Rp 550.000</span>
+      </div>
+      <div class="mobile-bar-actions">
+        <button type="button" class="btn-mob-wa" id="mobBtnWa" title="Kirim ke WhatsApp">
+          <i class="fa-brands fa-whatsapp"></i> Bagikan
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Toast Notification Box -->
+  <div class="toast-joyful" id="toast">
+    <span class="toast-icon"><i class="fa-solid fa-circle-check"></i></span>
+    <span id="toastMsg">Rincian catatan berhasil disalin!</span>
+  </div>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <div class="container footer-content">
+      <div class="footer-brand">
+        <span class="footer-logo"><i class="fa-solid fa-route"></i> DolanJatim</span>
+        <p>Solusi Perjalanan & Rekomendasi Cerdas Wisata Jawa Timur</p>
+      </div>
+      <div class="footer-links">
+        <a href="#plannerForm"><i class="fa-solid fa-arrow-up"></i> Ke Atas</a>
+        <span>•</span>
+        <span>OpenStreetMap Live</span>
+        <span>•</span>
+        <span>38 Kota/Kabupaten Jawa Timur</span>
+      </div>
+      <p class="copyright">&copy; 2026 DolanJatim • Liburan Nyaman, Budget Pas, Hasil Maksimal.</p>
+    </div>
+  </footer>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <!-- Dataset & Application Logic -->
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
