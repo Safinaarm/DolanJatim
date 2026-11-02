@@ -151,7 +151,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     playChime('click');
-    calculateAndRecommend();
   }
 
   btnMinusPeople.addEventListener('click', () => {
@@ -199,7 +198,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   budgetRange.addEventListener('change', () => {
     playChime('click');
-    calculateAndRecommend();
   });
 
   function parseBudgetValue() {
@@ -221,7 +219,6 @@ document.addEventListener('DOMContentLoaded', () => {
       budgetInput.value = b.toLocaleString('id-ID');
       budgetRange.value = Math.min(b, 6000000);
       syncPresetButtons(b);
-      calculateAndRecommend();
     });
   });
 
@@ -254,7 +251,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       
       syncHotelLabel();
-      calculateAndRecommend();
     });
   });
 
@@ -276,10 +272,12 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.dest-shortcut-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       playChime('click');
+      document.querySelectorAll('.dest-shortcut-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
       const targetCity = btn.getAttribute('data-dest');
       if (targetCity) {
         destSelect.value = targetCity;
-        calculateAndRecommend();
+        showToast(`📍 Kota tujuan diubah ke ${btn.textContent.trim()}. Klik tombol "Hitung dan Cari Rekomendasi" di atas untuk melihat hasilnya!`);
       }
     });
   });
@@ -541,6 +539,48 @@ document.addEventListener('DOMContentLoaded', () => {
     return packages;
   }
 
+  // 9b. State of which packages have their budget details expanded
+  let expandedPackages = new Set([1]); // Package 1 expanded by default
+
+  // Toggle package budget estimation view
+  window.togglePackageBudget = function(packageNum, e) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    const container = document.getElementById(`pkg-container-${packageNum}`);
+    if (!container) return;
+
+    const drawer = container.querySelector('.package-budget-drawer');
+    const chevron = container.querySelector('.toggle-chevron-circle');
+    const hintText = container.querySelector('.trigger-sub-hint');
+    const statusPill = container.querySelector('.trigger-badge-status');
+    const btnToggleViewText = container.querySelector('.btn-toggle-view span');
+
+    const isExpanded = expandedPackages.has(packageNum);
+    if (isExpanded) {
+      expandedPackages.delete(packageNum);
+      container.classList.remove('budget-expanded');
+      if (drawer) drawer.style.display = 'none';
+      if (chevron) chevron.classList.remove('open');
+      if (hintText) hintText.textContent = 'Klik container ini untuk melihat rincian kalkulasi bensin, tarif tol, tiket masuk & patungan';
+      if (statusPill) {
+        statusPill.textContent = 'Klik untuk Membuka';
+        statusPill.classList.remove('open');
+      }
+      if (btnToggleViewText) btnToggleViewText.textContent = 'Lihat Catatan Anggaran';
+    } else {
+      expandedPackages.add(packageNum);
+      container.classList.add('budget-expanded');
+      if (drawer) drawer.style.display = 'block';
+      if (chevron) chevron.classList.add('open');
+      if (hintText) hintText.textContent = 'Klik di sini atau klik container untuk menutup catatan rincian biaya';
+      if (statusPill) {
+        statusPill.textContent = 'Sedang Ditampilkan';
+        statusPill.classList.add('open');
+      }
+      if (btnToggleViewText) btnToggleViewText.textContent = 'Tutup Catatan';
+    }
+    playChime('click');
+  };
+
   // 10. Render All Package Containers to DOM
   function renderPackageContainers() {
     if (!currentPackages || currentPackages.length === 0) return;
@@ -550,6 +590,7 @@ document.addEventListener('DOMContentLoaded', () => {
     currentPackages.forEach(pkg => {
       const isSelected = pkg.num === selectedPackageNum;
       const isSurplus = pkg.balance >= 0;
+      const isExpanded = expandedPackages.has(pkg.num);
       const balanceLabel = isSurplus ? 'Sisa Budget Anda' : 'Kekurangan Budget';
       const balanceText = isSurplus ? `+${formatRupiah(pkg.balance)}` : `-${formatRupiah(Math.abs(pkg.balance))}`;
       
@@ -575,7 +616,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       let hotelMapsQuery = encodeURIComponent(`${pkg.hotel.name} ${pkg.hotel.location}`);
       let hotelMapsBtn = !pkg.hotel.isDayTrip 
-        ? `<a href="https://www.google.com/maps/search/?api=1&query=${hotelMapsQuery}" target="_blank" rel="noopener" class="rec-btn-action" title="Buka di Google Maps"><i class="fa-solid fa-arrow-up-right-from-square"></i> Peta</a>`
+        ? `<a href="https://www.google.com/maps/search/?api=1&query=${hotelMapsQuery}" target="_blank" rel="noopener" class="rec-btn-action" onclick="event.stopPropagation();" title="Buka di Google Maps"><i class="fa-solid fa-arrow-up-right-from-square"></i> Peta</a>`
         : '';
 
       let wisataMapsQuery = encodeURIComponent(`${pkg.wisata.name} ${pkg.wisata.location}`);
@@ -583,7 +624,7 @@ document.addEventListener('DOMContentLoaded', () => {
       let cafeMapsQuery = encodeURIComponent(`${pkg.cafe.name} ${pkg.cafe.location}`);
 
       const containerEl = document.createElement('div');
-      containerEl.className = `package-container ${isSelected ? 'selected' : ''}`;
+      containerEl.className = `package-container ${isSelected ? 'selected' : ''} ${isExpanded ? 'budget-expanded' : ''}`;
       containerEl.id = `pkg-container-${pkg.num}`;
       
       containerEl.innerHTML = `
@@ -592,24 +633,29 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="package-title-group">
             <span class="package-badge-num">${pkg.num}</span>
             <div>
-              <h4>${pkg.title}</h4>
-              <p>${pkg.subtitle}</p>
+              <div class="package-title-row">
+                <h4>${pkg.title}</h4>
+                ${badgeTag}
+              </div>
+              <p class="package-subtitle">${pkg.subtitle}</p>
             </div>
           </div>
           <div class="package-header-actions">
-            ${badgeTag}
-            <button type="button" class="btn-select-pkg" onclick="selectPackage(${pkg.num})">
+            <div class="package-cost-badge">
+              <span class="cost-badge-label">Total Estimasi:</span>
+              <strong class="cost-badge-val">${formatRupiah(pkg.totalMandatory)}</strong>
+              <span class="cost-badge-pax">${formatRupiah(pkg.costPerPerson)} / org</span>
+            </div>
+            <button type="button" class="btn-select-pkg" onclick="selectPackage(${pkg.num}); event.stopPropagation();">
               <i class="fa-solid ${isSelected ? 'fa-check' : 'fa-star'}"></i>
               <span>${isSelected ? 'Terpilih' : 'Pilih Paket Ini'}</span>
             </button>
           </div>
         </div>
 
-        <!-- Package Body Grid: 2 Columns -->
-        <div class="package-body-grid">
-          
-          <!-- Column 1: Items List (Wisata, Hotel, Resto [opsional], Cafe [opsional]) -->
-          <div class="recs-items-group">
+        <!-- Recommended Items Grid -->
+        <div class="package-items-section">
+          <div class="recs-items-grid">
             
             <!-- 1. WISATA ITEM -->
             <div class="rec-item-card">
@@ -629,10 +675,10 @@ document.addEventListener('DOMContentLoaded', () => {
                   <div class="rec-price-sub">${pkg.pax} orang @ ${cleanPriceDisplay(pkg.wisata.priceDisplay || formatRupiah(pkg.wisata.price))}</div>
                 </div>
                 <div class="rec-actions-bar">
-                  <button type="button" class="rec-btn-action swap-btn" onclick="openPlaceModal(${pkg.num}, 'wisata')" title="Pilih tempat wisata alternatif">
+                  <button type="button" class="rec-btn-action swap-btn" onclick="openPlaceModal(${pkg.num}, 'wisata'); event.stopPropagation();" title="Pilih tempat wisata alternatif">
                     <i class="fa-solid fa-arrows-rotate"></i> Ganti
                   </button>
-                  <a href="https://www.google.com/maps/search/?api=1&query=${wisataMapsQuery}" target="_blank" rel="noopener" class="rec-btn-action" title="Buka di Google Maps">
+                  <a href="https://www.google.com/maps/search/?api=1&query=${wisataMapsQuery}" target="_blank" rel="noopener" class="rec-btn-action" onclick="event.stopPropagation();" title="Buka di Google Maps">
                     <i class="fa-solid fa-arrow-up-right-from-square"></i> Peta
                   </a>
                 </div>
@@ -658,7 +704,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="rec-actions-bar">
                   ${calcMeta.needHotel ? `
-                  <button type="button" class="rec-btn-action swap-btn" onclick="openPlaceModal(${pkg.num}, 'hotel')" title="Pilih hotel alternatif">
+                  <button type="button" class="rec-btn-action swap-btn" onclick="openPlaceModal(${pkg.num}, 'hotel'); event.stopPropagation();" title="Pilih hotel alternatif">
                     <i class="fa-solid fa-arrows-rotate"></i> Ganti
                   </button>` : ''}
                   ${hotelMapsBtn}
@@ -684,10 +730,10 @@ document.addEventListener('DOMContentLoaded', () => {
                   <div class="rec-price-sub">Tidak masuk biaya wajib</div>
                 </div>
                 <div class="rec-actions-bar">
-                  <button type="button" class="rec-btn-action swap-btn" onclick="openPlaceModal(${pkg.num}, 'resto')" title="Pilih resto alternatif">
+                  <button type="button" class="rec-btn-action swap-btn" onclick="openPlaceModal(${pkg.num}, 'resto'); event.stopPropagation();" title="Pilih resto alternatif">
                     <i class="fa-solid fa-arrows-rotate"></i> Ganti
                   </button>
-                  <a href="https://www.google.com/maps/search/?api=1&query=${restoMapsQuery}" target="_blank" rel="noopener" class="rec-btn-action" title="Buka di Google Maps">
+                  <a href="https://www.google.com/maps/search/?api=1&query=${restoMapsQuery}" target="_blank" rel="noopener" class="rec-btn-action" onclick="event.stopPropagation();" title="Buka di Google Maps">
                     <i class="fa-solid fa-arrow-up-right-from-square"></i> Peta
                   </a>
                 </div>
@@ -712,10 +758,10 @@ document.addEventListener('DOMContentLoaded', () => {
                   <div class="rec-price-sub">Tidak masuk biaya wajib</div>
                 </div>
                 <div class="rec-actions-bar">
-                  <button type="button" class="rec-btn-action swap-btn" onclick="openPlaceModal(${pkg.num}, 'cafe')" title="Pilih cafe alternatif">
+                  <button type="button" class="rec-btn-action swap-btn" onclick="openPlaceModal(${pkg.num}, 'cafe'); event.stopPropagation();" title="Pilih cafe alternatif">
                     <i class="fa-solid fa-arrows-rotate"></i> Ganti
                   </button>
-                  <a href="https://www.google.com/maps/search/?api=1&query=${cafeMapsQuery}" target="_blank" rel="noopener" class="rec-btn-action" title="Buka di Google Maps">
+                  <a href="https://www.google.com/maps/search/?api=1&query=${cafeMapsQuery}" target="_blank" rel="noopener" class="rec-btn-action" onclick="event.stopPropagation();" title="Buka di Google Maps">
                     <i class="fa-solid fa-arrow-up-right-from-square"></i> Peta
                   </a>
                 </div>
@@ -723,12 +769,42 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
 
           </div>
+        </div>
 
-          <!-- Column 2: Catatan Estimasi Anggaran Khusus Paket Ini -->
-          <div class="package-receipt">
+        <!-- Interactive Budget Trigger Bar (Klik container untuk melihat rincian estimasi anggaran) -->
+        <div class="package-budget-trigger-bar" onclick="togglePackageBudget(${pkg.num}, event)">
+          <div class="trigger-bar-left">
+            <div class="trigger-icon-circle">
+              <i class="fa-solid fa-file-invoice-dollar"></i>
+            </div>
+            <div class="trigger-title-wrap">
+              <div class="trigger-title-row">
+                <strong>Catatan Estimasi Anggaran Paket ${pkg.num}</strong>
+                <span class="trigger-badge-status ${isExpanded ? 'open' : ''}">${isExpanded ? 'Sedang Ditampilkan' : 'Klik untuk Membuka'}</span>
+              </div>
+              <span class="trigger-sub-hint">
+                ${isExpanded 
+                  ? 'Klik di sini atau klik container untuk menutup catatan estimasi anggaran' 
+                  : 'Klik container ini untuk melihat rincian kalkulasi bensin, tarif tol, tiket masuk & patungan'}
+              </span>
+            </div>
+          </div>
+          <div class="trigger-bar-right">
+            <div class="btn-toggle-view">
+              <span>${isExpanded ? 'Tutup Catatan' : 'Lihat Catatan Anggaran'}</span>
+              <div class="toggle-chevron-circle ${isExpanded ? 'open' : ''}">
+                <i class="fa-solid fa-chevron-down"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Expandable Catatan Estimasi Anggaran (Receipt Drawer) -->
+        <div class="package-budget-drawer" style="display: ${isExpanded ? 'block' : 'none'};">
+          <div class="package-receipt-modern">
             <div class="receipt-header-mini">
-              <span style="font-size:0.68rem; font-weight:800; background:#f1f5f9; padding:0.2rem 0.6rem; border-radius:4px; text-transform:uppercase; color:#475569;">Struk Estimasi Paket ${pkg.num} (${pkg.pax} Orang)</span>
-              <h5>Catatan Estimasi Anggaran</h5>
+              <span class="receipt-pax-badge">Struk Estimasi Paket ${pkg.num} • ${pkg.pax} Orang</span>
+              <h5>Catatan Estimasi Anggaran Lengkap</h5>
               <p>${calcMeta.origName} ➔ ${calcMeta.destName} (${calcMeta.distanceOneWay} km)</p>
             </div>
 
@@ -750,7 +826,7 @@ document.addEventListener('DOMContentLoaded', () => {
               </tr>` : ''}
               <tr>
                 <td>
-                  <i class="fa-solid fa-ticket" style="color:#d97706;"></i> Tiket: ${pkg.wisata.name}
+                  <i class="fa-solid fa-ticket" style="color:#d97706;"></i> Tiket Masuk: ${pkg.wisata.name}
                   <span class="table-sub">${pkg.pax} tiket masuk</span>
                 </td>
                 <td>${formatRupiah(pkg.totalTickets)}</td>
@@ -767,7 +843,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <!-- Budget Usage Thermometer -->
             <div class="budget-meter-container">
               <div class="meter-header">
-                <span>Alokasi Budget</span>
+                <span>Alokasi Budget Rombongan</span>
                 <strong>${budgetPct}% Terpakai</strong>
               </div>
               <div class="meter-bar-track">
@@ -790,7 +866,7 @@ document.addEventListener('DOMContentLoaded', () => {
               </div>
             </div>
 
-            <!-- Patungan / Biaya Per Orang Box -->
+            <!-- Patungan per Orang Box -->
             <div class="receipt-patungan-box">
               <span><i class="fa-solid fa-user-group"></i> Patungan per Orang (${pkg.pax} org):</span>
               <strong>${formatRupiah(pkg.costPerPerson)} / org</strong>
@@ -800,13 +876,20 @@ document.addEventListener('DOMContentLoaded', () => {
               <i class="fa-solid fa-circle-info"></i> <strong>Catatan Resto & Cafe:</strong> Bersifat opsional dan tidak dimasukkan ke dalam total wajib di atas agar anggaran liburan Anda tetap fleksibel.
             </div>
 
-            <button type="button" class="btn-copy-package" onclick="copyPackageNote(${pkg.num})">
+            <button type="button" class="btn-copy-package" onclick="copyPackageNote(${pkg.num}); event.stopPropagation();">
               <i class="fa-brands fa-whatsapp"></i> Salin Rincian Paket ${pkg.num} ke WhatsApp
             </button>
           </div>
-
         </div>
       `;
+
+      // Clicking anywhere on container toggles budget view
+      containerEl.addEventListener('click', (e) => {
+        if (e.target.closest('button, a, input, select, .rec-btn-action, .btn-select-pkg, .btn-copy-package')) {
+          return;
+        }
+        togglePackageBudget(pkg.num);
+      });
 
       packagesList.appendChild(containerEl);
     });
@@ -967,6 +1050,7 @@ document.addEventListener('DOMContentLoaded', () => {
     pkg.isMatch = pkg.balance >= 0;
 
     itemPickerModal.classList.remove('show');
+    expandedPackages.add(pkg.num);
     renderPackageContainers();
     playChime('success');
     showToast(`✅ ${selectedItem.name} berhasil diterapkan pada Paket ${pkg.num}!`);
@@ -1000,7 +1084,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadingBox.style.display = 'flex';
     resultsSection.style.display = 'none';
     mobileFloatingBar.classList.remove('active');
-    window.scrollTo({ top: plannerForm.offsetTop - 30, behavior: 'smooth' });
+    loadingBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
     const routeData = await fetchOsmRoute(origin, dest);
     loadingBox.style.display = 'none';
@@ -1325,13 +1409,12 @@ document.addEventListener('DOMContentLoaded', () => {
     return `Rp ${Math.round(num).toLocaleString('id-ID')}`;
   }
 
-  // Form Submission
+  // Form Submission (Triggered only when user clicks button)
   plannerForm.addEventListener('submit', (e) => {
     e.preventDefault();
     calculateAndRecommend();
   });
 
-  // Initial Load
+  // Initial Load - populate dropdowns, wait for user to click button
   populateCities();
-  calculateAndRecommend();
 });
